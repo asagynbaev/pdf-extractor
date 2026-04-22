@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project-specific
+extracted/
+results/
+*.log
+*.jsonl
+*.txt
+.extraction_blacklist.json
+health_report.txt
+
+# PaddleOCR models (large, auto-downloaded)
+paddleocr/
+.paddleocr/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db

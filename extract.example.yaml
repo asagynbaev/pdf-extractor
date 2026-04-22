@@ -1,0 +1,39 @@
+# Example configuration for batch_extract.py
+# Copy to extract.yaml and modify as needed
+
+# Directory with PDF files
+pdf_dir: C:/Books/Cybersecurity
+
+# Output directory for results
+out_dir: ./extracted
+
+# Chunk size in words (~2-3 pages per chunk)
+chunk_size: 1024
+
+# Overlap between chunks (words)
+overlap: 64
+
+# PaddleOCR language: ru, en, cyrillic, ch
+lang: ru
+
+# DPI for full-page OCR rendering (higher = better quality but slower)
+dpi: 250
+
+# Minimum native characters to skip OCR (pages with less trigger full-page OCR)
+min_native: 80
+
+# Minimum OCR confidence threshold (0.0-1.0)
+# Lines below this are dropped (prevents garbage in dataset)
+conf_threshold: 0.6
+
+# Minimum image size (width * height pixels) to OCR embedded images
+img_min_px: 8000
+
+# OCR timeout in seconds (prevents hang on bad images)
+ocr_timeout: 60
+
+# Skip OCR entirely - native text + tables only (fastest for non-scanned PDFs)
+no_ocr: false
+
+# Force re-extraction even if .txt files exist
+reprocess: false

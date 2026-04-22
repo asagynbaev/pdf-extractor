@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-explainer"
+version = "1.0.0"
+description = "Production-grade batch PDF extraction pipeline for LLM fine-tuning datasets"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "PDF Extractor Contributors"}
+]
+keywords = ["pdf", "ocr", "nlp", "fine-tuning", "dataset", "extraction"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Natural Language :: Russian",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Text Processing",
+    "Topic :: Scientific/Engineering",
+]
+
+dependencies = [
+    "pymupdf==1.27.2",
+    "paddleocr==3.4.0",
+    "paddlepaddle==3.2.0",
+    "pillow==10.2.0",
+    "numpy==2.4.1",
+    "pyyaml==6.0.1",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "paddlepaddle-gpu==3.2.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=22.0",
+    "flake8>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/pdf-explainer"
+Documentation = "https://github.com/yourusername/pdf-explainer/blob/main/README.md"
+Repository = "https://github.com/yourusername/pdf-explainer"
+Issues = "https://github.com/yourusername/pdf-explainer/issues"
+
+[project.scripts]
+pdf-extract = "batch_extract:main"
+
+[tool.setuptools]
+py-modules = ["batch_extract"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=. --cov-report=term-only"
