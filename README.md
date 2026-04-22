@@ -98,6 +98,27 @@ cp extract.example.yaml extract.yaml
 python batch_extract.py --config extract.yaml
 ```
 
+### После обработки
+
+После завершения работы:
+
+```bash
+# 1. Проверь отчёт качества (самое важное)
+cat extracted/health_report.txt
+
+# 2. Посмотри статистику
+cat extracted/extraction_report.json | jq .
+
+# 3. Если есть низкокачественные PDFs, исправь их:
+python batch_extract.py "C:/Books/problem_book.pdf" --dpi 350 --conf 0.4 --reprocess
+
+# 4. Если есть PDFs с текстовым слоем, пересчитай без OCR:
+python batch_extract.py "C:/Books/textual_book.pdf" --no-ocr --reprocess
+
+# 5. Пересчитай датасет исключив проблемные:
+python batch_extract.py --exclude-blacklist
+```
+
 ---
 
 ## Результаты
