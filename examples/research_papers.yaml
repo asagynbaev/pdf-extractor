@@ -1,0 +1,38 @@
+# Research Papers Configuration (Fast Mode)
+# For extracting academic papers with native text layers
+# Usage: python batch_extract.py --config examples/research_papers.yaml
+
+pdf_dir: C:/Papers
+
+out_dir: ./extracted_papers
+
+# Smaller chunks for paper abstracts and sections
+chunk_size: 512
+
+# Minimal overlap for efficiency
+overlap: 32
+
+# English academic papers
+lang: en
+
+# DPI not used (OCR disabled)
+dpi: 250
+
+# Skip OCR entirely - papers have text layers
+# This is 10x faster than OCR
+no_ocr: true
+
+# Minimum native text (doesn't apply with no_ocr)
+min_native: 80
+
+# Confidence threshold (ignored when no_ocr=true)
+conf_threshold: 0.6
+
+# Image size filter
+img_min_px: 8000
+
+# OCR timeout (ignored when no_ocr=true)
+ocr_timeout: 60
+
+# Reprocess from scratch
+reprocess: false

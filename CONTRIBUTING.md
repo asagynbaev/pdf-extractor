@@ -11,8 +11,8 @@ Be respectful, inclusive, and constructive in all interactions.
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/pdf-explainer.git
-   cd pdf-explainer
+   git clone https://github.com/YOUR_USERNAME/pdf-extractor.git
+   cd pdf-extractor
    ```
 3. **Create a virtual environment**:
    ```bash

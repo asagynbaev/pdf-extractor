@@ -58,4 +58,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-For detailed information about each release, see the [releases page](https://github.com/yourusername/pdf-explainer/releases).
+For detailed information about each release, see the [releases page](https://github.com/yourusername/pdf-extractor/releases).

@@ -1,0 +1,38 @@
+# Multilingual Dataset Configuration
+# For mixed Russian + English documents
+# Usage: python batch_extract.py --config examples/multilingual.yaml
+
+pdf_dir: C:/Books/Mixed
+
+out_dir: ./extracted_multilingual
+
+# Standard chunk size
+chunk_size: 1024
+
+# Standard overlap
+overlap: 64
+
+# Russian language (covers Russian + English in mixed documents)
+# PaddleOCR detects both scripts automatically
+lang: ru
+
+# Standard DPI for printed books
+dpi: 250
+
+# Minimum native text
+min_native: 80
+
+# Standard confidence for mixed documents
+conf_threshold: 0.6
+
+# Image filtering
+img_min_px: 8000
+
+# Standard timeout
+ocr_timeout: 60
+
+# Process both text and OCR
+no_ocr: false
+
+# Resume processing
+reprocess: false

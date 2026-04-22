@@ -1,0 +1,40 @@
+# Cybersecurity Books Configuration
+# For extracting technical cybersecurity textbooks
+# Usage: python batch_extract.py --config examples/cybersecurity.yaml
+
+pdf_dir: C:/Books/Cybersecurity
+
+out_dir: ./extracted
+
+# Chunk size optimized for technical content
+# 1024 words ≈ 2-3 pages of dense text
+chunk_size: 1024
+
+# Overlap ensures code snippets and diagrams aren't split
+overlap: 64
+
+# English technical documentation
+lang: en
+
+# Standard DPI for printed books
+dpi: 250
+
+# Minimum native text before triggering OCR
+min_native: 80
+
+# Confidence threshold (0.6 = moderate quality)
+# Lower = include more OCR output (risk of garbage)
+# Higher = exclude uncertain text (risk of missing data)
+conf_threshold: 0.6
+
+# Minimum image size to OCR (prevents processing tiny decorations)
+img_min_px: 8000
+
+# Timeout prevents hangs on corrupted images
+ocr_timeout: 60
+
+# Process text + tables natively, OCR only for scanned pages
+no_ocr: false
+
+# Resume from last successful PDF
+reprocess: false

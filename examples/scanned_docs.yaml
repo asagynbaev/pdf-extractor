@@ -1,0 +1,43 @@
+# Scanned Documents Configuration (High Quality)
+# For extracting scanned documents with poor quality
+# Usage: python batch_extract.py --config examples/scanned_docs.yaml
+
+pdf_dir: C:/Scans
+
+out_dir: ./extracted_scans
+
+# Larger chunks to preserve context from noisy extraction
+chunk_size: 1024
+
+# Higher overlap to avoid losing info at chunk boundaries
+overlap: 128
+
+# English language
+lang: en
+
+# CRITICAL: Higher DPI for better scan quality
+# 350 DPI = ~1MB per page, but much better OCR accuracy
+# Use 300-350 for poor quality scans
+dpi: 350
+
+# Higher minimum native text threshold
+# Scanned pages have very little native text
+min_native: 50
+
+# CRITICAL: Lower confidence threshold
+# Scanned documents have lower average confidence
+# 0.4 = accept more uncertain text (needed for old scans)
+# With filtering, low-confidence chunks go to train.lowquality.jsonl
+conf_threshold: 0.4
+
+# Larger images are more likely to have legible text
+img_min_px: 8000
+
+# Longer timeout for slower processing
+ocr_timeout: 120
+
+# Don't skip OCR - this is the primary extraction method for scans
+no_ocr: false
+
+# Force reprocess to apply new settings
+reprocess: false
