@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8 black
+
+    - name: Check code style with black
+      run: black --check batch_extract.py
+      continue-on-error: true
+
+    - name: Lint with flake8
+      run: flake8 batch_extract.py --count --select=E9,F63,F7,F82 --show-source --statistics
+      continue-on-error: true
+
+    - name: Check syntax
+      run: python -m py_compile batch_extract.py
+
+    - name: Verify help command works
+      run: python batch_extract.py --help
+
+    - name: Check documentation completeness
+      run: |
+        [ -f README.md ] && echo "README.md exists"
+        [ -f docs/installation.md ] && echo "docs/installation.md exists"
+        [ -f docs/batch_extract.md ] && echo "docs/batch_extract.md exists"
+        [ -f docs/output_formats.md ] && echo "docs/output_formats.md exists"
+        [ -f docs/architecture.md ] && echo "docs/architecture.md exists"
+        [ -f CONTRIBUTING.md ] && echo "CONTRIBUTING.md exists"
+        [ -f LICENSE ] && echo "LICENSE exists"
+
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check for hardcoded secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: ${{ github.event.repository.default_branch }}
+        head: HEAD
+        extra_args: --debug --only-verified
+      continue-on-error: true

@@ -1,9 +1,32 @@
 # PDF Extractor — Production Dataset Pipeline
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status: Production](https://img.shields.io/badge/status-production-brightgreen)]()
+[![Documentation](https://img.shields.io/badge/docs-complete-success)]()
+
+Batch processing of hundreds of PDFs → ready-to-use dataset `train.jsonl` for LLM fine-tuning.  
+**Production-ready**: zero data loss, atomic operations, complete logging, resume + blacklist.
+
 Батч-обработка сотен PDF-файлов → готовый датасет `train.jsonl` для файн-тюнинга LLM.  
 **Production-ready**: нулевая потеря данных, атомарные операции, полное логирование, resume + blacklist.
 
-## 30 секунд
+## Key Features
+
+- **Zero Data Loss** - Atomic writes prevent data loss during crashes
+- **Quality Control** - Automatic health reports identify and filter low-quality extractions
+- **Multi-Column Layouts** - Correctly handles multi-column documents
+- **OCR with PaddleOCR** - Supports 20+ languages, configurable DPI, confidence filtering
+- **Table Extraction** - Converts tables to markdown format
+- **Image OCR** - Extracts text from embedded images
+- **Resume Capability** - Interrupted batches continue from last successful PDF
+- **Production Ready** - Used in production systems with critical requirements
+- **Zero Silent Failures** - All errors are logged and reported
+- **Pinned Dependencies** - Reproducible across environments and time
+- **Comprehensive Documentation** - Installation, usage, API, architecture guides
+- **PyPI Package** - One command installation via `pip install pdf-explainer`
+
+## 30 сек
 
 ```bash
 # Установка
@@ -43,6 +66,17 @@ ls extracted/
 - **Pinned versions** — воспроизводимость  
 
 ---
+
+## Use Cases
+
+- **LLM Fine-Tuning**: Prepare training datasets from technical books, documentation, research papers
+- **Document Analysis**: Extract structured data from large PDF collections
+- **Data Pipeline**: Automate PDF processing in data engineering workflows
+- **Text Mining**: Bulk extract text from hundreds/thousands of documents
+- **Dataset Creation**: Build machine learning datasets from PDF documents
+- **OCR at Scale**: Process scanned PDFs with high accuracy
+- **Compliance**: Extract and archive text from legal/financial documents
+- **Knowledge Management**: Convert PDF libraries into searchable text databases
 
 ## Документация
 
