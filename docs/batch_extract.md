@@ -1,97 +1,98 @@
-# batch_extract.py — Полный справочник
+# batch_extract.py — Complete Reference
 
-Основной скрипт для батч-обработки PDF → `train.jsonl`.
+Main script for batch PDF processing → `train.jsonl`.
 
 ---
 
-## Синтаксис
+## Syntax
 
 ```bash
-# Прямой запуск
-python batch_extract.py <pdf_dir> [опции]
+# Direct execution
+python batch_extract.py <pdf_dir> [options]
 
-# Через конфиг
+# Using config file
 python batch_extract.py --config extract.yaml
 ```
 
 ---
 
-## Аргументы
+## Arguments
 
-### Позиционный
+### Positional
 
-| Аргумент | Описание |
+| Argument | Description |
 |---|---|
-| `pdf_dir` | Путь к папке с PDF (опционально если использовать `--config`) |
+| `pdf_dir` | Path to folder with PDFs (optional if using `--config`) |
 
-### Опциональные
+### Optional Flags
 
-| Флаг | Умолчание | Описание |
+| Flag | Default | Description |
 |---|---|---|
-| `--config PATH` | — | YAML/JSON конфиг файл (переопределяет все CLI флаги) |
-| `--out DIR` | `extracted` | Папка для результатов |
-| `--chunk INT` | `1024` | Размер чанка в словах |
-| `--overlap INT` | `64` | Перекрытие между чанками (слова) |
-| `--lang STR` | `ru` | PaddleOCR язык: `ru`, `en`, `cyrillic`, `ch` |
-| `--dpi FLOAT` | `250` | DPI рендеринга для полностраничного OCR |
-| `--min-native INT` | `80` | Символов на странице чтобы пропустить OCR |
-| `--conf FLOAT` | `0.6` | Min confidence для OCR (0.0–1.0) |
-| `--img-min-px INT` | `8000` | Min площадь картинки W×H для OCR |
-| `--ocr-timeout INT` | `60` | Timeout OCR в секундах (предотвращает зависания) |
-| `--no-ocr` | выкл | Только текст + таблицы, без OCR |
-| `--reprocess` | выкл | Переобработать даже если .txt существует |
+| `--config PATH` | — | YAML/JSON config file (overrides all CLI flags) |
+| `--out DIR` | `extracted` | Output directory for results |
+| `--chunk INT` | `1024` | Chunk size in words |
+| `--overlap INT` | `64` | Overlap between chunks (words) |
+| `--lang STR` | `en` | PaddleOCR language: `en`, `ru`, `zh`, etc |
+| `--dpi FLOAT` | `250` | DPI for full-page OCR rendering |
+| `--min-native INT` | `80` | Min characters to skip OCR |
+| `--conf FLOAT` | `0.6` | OCR confidence threshold (0.0–1.0) |
+| `--img-min-px INT` | `8000` | Min image size (W×H pixels) for OCR |
+| `--ocr-timeout INT` | `60` | OCR timeout in seconds (prevents hangs) |
+| `--no-ocr` | off | Skip OCR (text + tables only) |
+| `--reprocess` | off | Reprocess even if .txt exists |
+| `--exclude-blacklist` | — | Rebuild datasets excluding blacklisted PDFs |
 
 ---
 
-## Примеры запуска
+## Usage Examples
 
-### Базовый
+### Basic
 
 ```bash
 python batch_extract.py "C:/Books"
 ```
 
-### Быстро (только текст, без OCR)
+### Fast (text only, no OCR)
 
 ```bash
 python batch_extract.py "C:/Books" --no-ocr
 ```
 
-### Высокое качество (для плохих сканов)
+### High quality (for poor scans)
 
 ```bash
 python batch_extract.py "C:/Books" --dpi 350 --conf 0.5
 ```
 
-### С конфиг-файлом
+### Using config file
 
 ```bash
 python batch_extract.py --config extract.yaml
 ```
 
-### Quality Control — исключить проблемные PDF
+### Quality Control — Exclude Problematic PDFs
 
-Если обработка была прервана и появился `.extraction_blacklist.json`:
+If processing was interrupted and `.extraction_blacklist.json` was created:
 
 ```bash
-# Перестроить датасеты, пропуская повреждённые PDF
+# Rebuild datasets, skipping corrupted PDFs
 python batch_extract.py --exclude-blacklist
 ```
 
-Это переделает `train.jsonl` и `train.lowquality.jsonl` исключив чёрный список.
+This rebuilds `train.jsonl` and `train.lowquality.jsonl` excluding the blacklist.
 
 ---
 
-## Конфиг файл (YAML)
+## Configuration File (YAML)
 
-Создай `extract.yaml`:
+Create `extract.yaml`:
 
 ```yaml
 pdf_dir: C:/Books/Cybersecurity
 out_dir: ./extracted
 chunk_size: 1024
 overlap: 64
-lang: ru
+lang: en
 dpi: 250
 min_native: 80
 conf_threshold: 0.6
@@ -101,19 +102,19 @@ no_ocr: false
 reprocess: false
 ```
 
-Запуск:
+Run:
 
 ```bash
 python batch_extract.py --config extract.yaml
 ```
 
-Удобно для повторяющихся запусков с одними параметрами.
+Convenient for repeated runs with same parameters.
 
 ---
 
 ## Production Features
 
-### Валидация входа
+### Input Validation
 
 ```
 ERROR: PDF directory not found: C:/NonExistent
@@ -122,75 +123,75 @@ ERROR: Output directory not writable: /root/protected
 ERROR: Less than 1 GB free disk space (0.50 GB)
 ```
 
-Все ошибки выводятся ПЕРЕД началом обработки.
+All errors are shown BEFORE processing starts.
 
-### Атомарные операции
+### Atomic Operations
 
-Если процесс упадёт:
-- `.txt` файл пишется через временный файл → сразу переименовывается
-- `.manifest.json` пишется так же
-- Данные не теряются при краше или отключении диска
+If the process crashes:
+- `.txt` file is written to temporary file → renamed atomically
+- `.manifest.json` is written the same way
+- Data is never lost on crash or power failure
 
-### OCR timeout
+### OCR Timeout
 
-Если OCR зависает на картинке:
-
-```
---ocr-timeout 60    # обычно 60 сек достаточно
---ocr-timeout 120   # для медленных CPU или GPU
-```
-
-Без timeout страница может зависнуть навсегда. С timeout — страница пропускается, обработка продолжается.
-
-### Skip-on-repeated-failure
-
-Если PDF #7 каждый раз вызывает краш:
-- При первом краше → в `.extraction_blacklist.json`
-- При втором запуске → автоматически пропускается
-
-Можно вручную отредактировать `.extraction_blacklist.json` чтобы переобработать.
-
-### Integrity validation
-
-После каждого PDF скрипт проверяет:
-- Совпадает ли длина `.txt` с `total_chars` в manifest (±10%)
-- Есть ли страницы с `failed`
-- Много ли `low_quality_pages`
+If OCR hangs on an image:
 
 ```
-  integrity check: Character count mismatch: txt=847293, manifest=845200
-  integrity check: 2 page(s) failed to extract
+--ocr-timeout 60    # usually 60 sec is enough
+--ocr-timeout 120   # for slow CPU or GPU
 ```
 
-### Resume + reprocess
+Without timeout, a page can hang forever. With timeout, the page is skipped and processing continues.
+
+### Skip on Repeated Failure
+
+If PDF #7 always causes a crash:
+- First crash → added to `.extraction_blacklist.json`
+- Next run → automatically skipped
+
+You can manually edit `.extraction_blacklist.json` to reprocess.
+
+### Integrity Validation
+
+After each PDF, the script checks:
+- Does `.txt` length match `total_chars` in manifest (±10%)?
+- Are there pages with `failed` status?
+- Are there too many `low_quality_pages`?
+
+```
+integrity check: Character count mismatch: txt=847293, manifest=845200
+integrity check: 2 page(s) failed to extract
+```
+
+### Resume + Reprocess
 
 ```bash
-# Первый запуск — обработает все
+# First run — processes all PDFs
 python batch_extract.py "C:/Books"
 
-# Второй запуск — пропустит готовые, продолжит прерванные
+# Second run — skips completed, continues interrupted
 python batch_extract.py "C:/Books"
 
-# Переобработать всё заново
+# Reprocess everything from scratch
 python batch_extract.py "C:/Books" --reprocess
 ```
 
 ---
 
-## Выходные файлы
+## Output Files
 
-| Файл | Описание |
+| File | Description |
 |---|---|
-| `<stem>.txt` | Полный текст PDF |
-| `<stem>.manifest.json` | Отчёт по каждой странице |
-| `train.jsonl` | Все чанки всех PDF |
-| `extraction_report.json` | Сводка: время, скорость, ошибки |
-| `extraction.log` | Полный лог с временными метками |
-| `.extraction_blacklist.json` | Список PDF-файлов с повторяющимися ошибками |
+| `<stem>.txt` | Full extracted text |
+| `<stem>.manifest.json` | Per-page extraction report |
+| `train.jsonl` | All chunks from all PDFs |
+| `extraction_report.json` | Summary: time, speed, errors |
+| `extraction.log` | Complete operation log with timestamps |
+| `.extraction_blacklist.json` | List of PDFs with repeated errors |
 
 ---
 
-## Интерпретация вывода
+## Output Interpretation
 
 ```
 [1/100] Book1.pdf
@@ -216,19 +217,19 @@ Report       : extracted/extraction_report.json
 ═════════════════════════════════════════════════════════════════════════════
 ```
 
-| Метрика | Норма | Проблема |
+| Metric | Good | Problem |
 |---|---|---|
-| `errors=0` | Хорошо | Плохо если > 0 |
-| `warnings` | 0–5 на PDF | много warnings → проверь лог |
-| `low_q` | 0–2 на PDF | > 5% страниц → пересчитай с `--dpi 350` |
-| `chars` | сотни тысяч | < 10K → скорее всего пустой или плохой PDF |
+| `errors=0` | Yes | Bad if > 0 |
+| `warnings` | 0–5 per PDF | Many warnings → check log |
+| `low_q` | 0–2 per PDF | > 5% of pages → reprocess with `--dpi 350` |
+| `chars` | Hundreds of thousands | < 10K → likely empty or bad PDF |
 
 ---
 
-## Коды возврата
+## Exit Codes
 
-| Код | Значение |
+| Code | Meaning |
 |---|---|
-| `0` | Успех, без ошибок |
-| `1` | Завершено с ошибками |
-| `130` | Прервано пользователем (Ctrl+C) |
+| `0` | Success, no errors |
+| `1` | Completed with errors |
+| `130` | Interrupted by user (Ctrl+C) |

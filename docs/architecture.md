@@ -1,226 +1,226 @@
-# Архитектура
+# Architecture
 
-Внутреннее устройство `batch_extract.py` — как именно работает каждый компонент.
+Internal design of `batch_extract.py` — how each component works.
 
 ---
 
-## Общий поток данных
+## Data Flow Overview
 
 ```
-PDF файл
+PDF file
     │
     ▼
-sha256_file()          ← контрольная сумма для идентификации
+sha256_file()          ← checksum for identification
     │
     ▼
 detect_header_footer_strings()
-    │  Проходит по ВСЕМ страницам один раз
-    │  Собирает первые и последние 2 блока каждой страницы
-    │  Строки, встречающиеся на ≥ 40% страниц → повторяющиеся
-    │  Страницы с меняющимися числами ("Глава 3 — 42") нормализуются:
-    │  цифры заменяются на "#" перед сравнением
+    │  Scans ALL pages once
+    │  Collects first and last 2 blocks from each page
+    │  Strings appearing on ≥ 40% of pages → headers/footers
+    │  Pages with varying numbers ("Chapter 3 — 42") normalized:
+    │  digits replaced with "#" before comparison
     │
     ▼
-Для каждой страницы:
+For each page:
     │
     ├─ extract_page()
     │       │
     │       ├─ _extract_links()          page.get_links() → {rect: uri}
     │       │
-    │       ├─ _detect_footnotes()       page.get_text("dict") → размеры шрифтов
-    │       │   Находит блоки в нижних 25% страницы с шрифтом < 85% от основного
+    │       ├─ _detect_footnotes()       page.get_text("dict") → font sizes
+    │       │   Finds blocks in bottom 25% of page with font < 85% of main text
     │       │
-    │       ├─ page.find_tables()        PyMuPDF встроенный детектор таблиц
-    │       │   └─ _table_to_markdown()  → markdown с fallback на plain cells
+    │       ├─ page.find_tables()        PyMuPDF built-in table detector
+    │       │   └─ _table_to_markdown()  → markdown with fallback to plain cells
     │       │
-    │       ├─ page.get_text("blocks")   Все текстовые блоки с координатами
-    │       │   ├─ Пропуск блоков сносок (по индексу из _detect_footnotes)
-    │       │   ├─ Пропуск блоков внутри таблиц (пересечение rect)
-    │       │   ├─ Пропуск колонтитулов (_is_header_footer)
-    │       │   └─ _assign_columns()     Кластеризация по x-центру блоков
-    │       │       Сортировка: (col_index, y) — колонка-первый, потом сверху вниз
+    │       ├─ page.get_text("blocks")   All text blocks with coordinates
+    │       │   ├─ Skip footnote blocks (by index from _detect_footnotes)
+    │       │   ├─ Skip blocks inside tables (rect intersection)
+    │       │   ├─ Skip headers/footers (_is_header_footer)
+    │       │   └─ _assign_columns()     Cluster blocks by x-center
+    │       │       Sort: (col_index, y) — column-first, then top-to-bottom
     │       │
-    │       ├─ Встроенные изображения    page.get_images(full=True)
-    │       │   ├─ Фильтрация по W×H    (img-min-px)
-    │       │   ├─ _bytes_to_rgb()       PIL декодинг
-    │       │   └─ ocr_engine.predict()  → _parse_ocr_result() с фильтром confidence
+    │       ├─ Embedded images           page.get_images(full=True)
+    │       │   ├─ Filter by W×H        (img-min-px)
+    │       │   ├─ _bytes_to_rgb()       PIL decoding
+    │       │   └─ ocr_engine.predict()  → _parse_ocr_result() with confidence filter
     │       │
-    │       ├─ Полностраничный OCR       если native_chars < min-native
-    │       │   ├─ page.get_pixmap()     рендер в DPI
+    │       ├─ Full-page OCR            if native_chars < min-native
+    │       │   ├─ page.get_pixmap()     render at DPI
     │       │   ├─ _pix_to_rgb()
     │       │   └─ ocr_engine.predict()  → _parse_ocr_result()
     │       │
-    │       └─ Сборка: text + tables + image_ocr + footnotes + links
+    │       └─ Assembly: text + tables + image_ocr + footnotes + links
     │
     ├─ _merge_cross_page_paragraphs()
-    │   Если конец стр. N не заканчивается на . ! ? и
-    │   начало стр. N+1 — маленькая буква → склеить
+    │   If end of page N is not . ! ? and
+    │   start of page N+1 is lowercase → merge
     │
-    └─ Сохранение .txt и .manifest.json
+    └─ Save .txt and .manifest.json
     
-chunk_text()            Скользящее окно по словам
+chunk_text()            Sliding window over words
     │
     ▼
-train.jsonl             {"text": "..."} — одна запись = один чанк
+train.jsonl             {"text": "..."} — one entry = one chunk
 ```
 
 ---
 
-## Компоненты
+## Components
 
-### `PageReport` и `PDFManifest`
+### `PageReport` and `PDFManifest`
 
-Python dataclasses. Сериализуются через `dataclasses.asdict()` в JSON без потери полей. Ни одно значение не теряется — все счётчики инкрементируются явно.
+Python dataclasses. Serialized via `dataclasses.asdict()` to JSON without field loss. All values are preserved — counters incremented explicitly.
 
 ### `detect_header_footer_strings(doc)`
 
 ```python
-# Нормализация: "Глава 3 — 42" → "глава # — #"
+# Normalization: "Chapter 3 — 42" → "chapter # — #"
 def _normalise(s): return re.sub(r"\b\d+\b", "#", s.strip().lower())
 
-# Порог: 40% страниц должны иметь эту строку
+# Threshold: 40% of pages must have this string
 threshold = max(2, int(n * 0.40))
 ```
 
-Проверяет первые 2 и последние 2 текстовых блока каждой страницы. Это покрывает 99% книжных колонтитулов не захватывая контент.
+Checks first 2 and last 2 text blocks on each page. Covers 99% of book headers/footers without capturing content.
 
 ### `_assign_columns(blocks, page_width)`
 
-Алгоритм:
-1. Вычисляет x-центр каждого блока: `(x0 + x1) / 2`
-2. Сортирует все уникальные x-центры
-3. Ищет пробелы между соседними центрами > 15% ширины страницы
-4. Каждый пробел = граница колонки
-5. Присваивает блокам индекс колонки, сортирует по `(col_index, y0)`
+Algorithm:
+1. Computes x-center of each block: `(x0 + x1) / 2`
+2. Sorts all unique x-centers
+3. Finds gaps between adjacent centers > 15% of page width
+4. Each gap = column boundary
+5. Assigns blocks to column indices, sorts by `(col_index, y0)`
 
-Пример для двухколоночной страницы (ширина 595pt):
+Example for two-column page (width 595pt):
 ```
-Блоки с x-центром 120–150pt → колонка 0
-Пробел ~250pt (> 595 * 0.15 = 89pt) → граница
-Блоки с x-центром 380–420pt → колонка 1
-Результат: все блоки кол.0 читаются до блоков кол.1
+Blocks with x-center 120–150pt → column 0
+Gap ~250pt (> 595 * 0.15 = 89pt) → boundary
+Blocks with x-center 380–420pt → column 1
+Result: all column 0 blocks read before column 1 blocks
 ```
 
 ### `_detect_footnotes(page)`
 
-1. Получает `page.get_text("dict")` — детальный формат с размерами шрифтов
-2. Находит самый частый размер шрифта = основной текст
-3. Блоки в нижних 25% страницы с шрифтом < 85% от основного → сноски
-4. Возвращает индексы блоков для исключения из основного текста
+1. Gets `page.get_text("dict")` — detailed format with font sizes
+2. Finds most common font size = main text
+3. Blocks in bottom 25% of page with font < 85% of main → footnotes
+4. Returns block indices to exclude from main text
 
 ### `_parse_ocr_result(items, conf_threshold)`
 
-PaddleOCR возвращает список prediction-объектов. У каждого:
-- `rec_texts` — список строк
-- `rec_scores` — соответствующие confidence scores (0.0–1.0)
+PaddleOCR returns list of prediction objects. Each has:
+- `rec_texts` — list of lines
+- `rec_scores` — corresponding confidence scores (0.0–1.0)
 
-Строки с `score < conf_threshold` отбрасываются и считаются в `ocr_lines_dropped`. Это критически важно для скан-страниц плохого качества — без фильтрации OCR мусор попадает в датасет.
+Lines with `score < conf_threshold` are discarded and counted in `ocr_lines_dropped`. Critical for poor-quality scans — prevents OCR garbage from entering dataset.
 
 ### `_merge_cross_page_paragraphs(pages_text)`
 
 ```python
-_SENTENCE_END = re.compile(r'[.!?…»"''")\]>]\s*$')  # конец предложения
-_STARTS_LOWER = re.compile(r'^\s*[а-яёa-z]')         # маленькая буква
+_SENTENCE_END = re.compile(r'[.!?…»"''")\]>]\s*$')  # sentence end
+_STARTS_LOWER = re.compile(r'^\s*[a-z]')             # lowercase letter
 
-# Если предыдущая страница НЕ заканчивается на знак препинания
-# И текущая начинается с маленькой буквы → склеить
+# If previous page does NOT end with punctuation
+# AND current page starts with lowercase letter → merge
 ```
 
-Обрабатывает случай когда PDF-ридер разбивает абзац ровно на границе страницы.
+Handles case where PDF reader splits paragraph at page boundary.
 
 ### `chunk_text(text, chunk_size, overlap)`
 
-Скользящее окно по словам (не токенам, не символам):
+Sliding window over words (not tokens, not characters):
 
 ```
 words = text.split()
-для i в диапазоне(0, len(words), chunk_size - overlap):
+for i in range(0, len(words), chunk_size - overlap):
     chunk = words[i : i + chunk_size]
 ```
 
-Перекрытие (`overlap=64`) гарантирует что контекст на границах чанков не теряется при обучении.
+Overlap (`overlap=64`) ensures context at chunk boundaries is preserved during training.
 
 ---
 
-## Обработка ошибок
+## Error Handling
 
-Каждая операция завёрнута в `try/except`:
+Each operation wrapped in `try/except`:
 
-| Уровень | Поведение при ошибке |
+| Level | Behavior on Error |
 |---|---|
-| `fitz.open()` | PDF пропускается, ошибка в manifest и лог |
-| `load_page()` | Страница помечается `method=failed`, обработка продолжается |
-| `find_tables()` | Предупреждение, таблицы пропускаются, текст извлекается |
-| `extract_image()` | Предупреждение, картинка пропускается |
-| `ocr_engine.predict()` | Предупреждение, OCR пропускается |
-| Весь PDF | Критическая ошибка, PDF пропускается, остальные обрабатываются |
+| `fitz.open()` | PDF skipped, error recorded in manifest and log |
+| `load_page()` | Page marked `method=failed`, processing continues |
+| `find_tables()` | Warning, tables skipped, text extracted |
+| `extract_image()` | Warning, image skipped |
+| `ocr_engine.predict()` | Warning, OCR skipped |
+| Entire PDF | Critical error, PDF skipped, others continue |
 
-Ни одна ошибка не прерывает обработку всей очереди. Всё фиксируется.
+No error interrupts the entire batch. All errors are recorded.
 
 ---
 
 ## Quality Control System
 
-После извлечения всех PDF автоматически запускается система контроля качества:
+After extracting all PDFs, quality control system runs automatically:
 
 ### `compute_quality_metrics(manifest: dict) -> QualityMetrics`
 
-Анализирует manifest каждого PDF и вычисляет:
-- `avg_confidence` — средний confidence score OCR-блоков (0.0–1.0)
-- `min_confidence` — минимальный confidence в PDF
-- `pages_low_confidence` — список страниц с confidence < 0.70
-- `pages_very_low_quality` — список страниц с < 50 символов (пустые/повреждённые)
+Analyzes each PDF manifest and computes:
+- `avg_confidence` — average OCR confidence score (0.0–1.0)
+- `min_confidence` — minimum confidence in PDF
+- `pages_low_confidence` — list of pages with confidence < 0.70
+- `pages_very_low_quality` — list of pages with < 50 characters (empty/corrupted)
 - `issue_severity` — "ok" | "warning" | "critical"
 
-Правила severity:
-- **CRITICAL**: avg_conf < 0.50 ИЛИ > 30% страниц низкого качества
-- **WARNING**: avg_conf < 0.65 ИЛИ > 15% страниц низкого качества
-- **OK**: всё хорошо
+Severity rules:
+- **CRITICAL**: avg_conf < 0.50 OR > 30% of pages low quality
+- **WARNING**: avg_conf < 0.65 OR > 15% of pages low quality
+- **OK**: all good
 
 ### `generate_health_report(metrics_list, out_path) -> str`
 
-Генерирует текстовый отчёт со следующими секциями:
+Generates text report with sections:
 
-1. **CRITICAL ISSUES** — PDFs которые нужно переоработать
-2. **WARNINGS** — PDFs которые можно отфильтровать
-3. **GOOD PDFs** — готовые к обучению
-4. **AUTO-GENERATED REPAIR RECIPES** — команды для переобработки
+1. **CRITICAL ISSUES** — PDFs that need reprocessing
+2. **WARNINGS** — PDFs that can be filtered
+3. **GOOD PDFs** — ready for training
+4. **AUTO-GENERATED REPAIR RECIPES** — commands to reprocess
 
-Пример рецепта ремонта для Book1.pdf с низким confidence:
+Example repair recipe for Book1.pdf with low confidence:
 ```bash
 python batch_extract.py '<pdf_dir>/Book1.pdf' --dpi 350 --conf 0.4 --reprocess
 ```
 
 ### `filter_low_quality_chunks(jsonl_in, manifests, quality_metrics, out_dir) -> tuple[int, int]`
 
-Разделяет train.jsonl на две части:
+Splits train.jsonl into two parts:
 
-1. **train.jsonl** — чанки только с хорошими страниц
-2. **train.lowquality.jsonl** — чанки с проблемных страниц для ручного просмотра
+1. **train.jsonl** — chunks from high-quality pages only
+2. **train.lowquality.jsonl** — chunks from problem pages for manual review
 
-Идентификация: каждый чанк содержит page header типа `[book_name:PAGE 5/100 | OCR]`. Функция проверяет есть ли такие page markers в чанке для проблемных страниц.
+Identification: each chunk contains page header like `[book_name:PAGE 5/100 | OCR]`. Function checks if such page markers exist in chunk for problem pages.
 
 ---
 
-## Зависимости и их роли
+## Dependencies and Their Roles
 
 ```
 fitz (PyMuPDF)
-  ├─ fitz.open()           — открытие PDF
-  ├─ page.get_text()       — нативный текст в разных форматах
-  ├─ page.find_tables()    — обнаружение и извлечение таблиц
-  ├─ page.get_images()     — список встроенных изображений
-  ├─ doc.extract_image()   — байты изображения по xref
-  ├─ page.get_links()      — гиперссылки
-  ├─ page.get_pixmap()     — рендер страницы в растр
-  └─ fitz.Pixmap           — операции с растровым изображением
+  ├─ fitz.open()           — open PDF
+  ├─ page.get_text()       — native text in various formats
+  ├─ page.find_tables()    — detect and extract tables
+  ├─ page.get_images()     — list embedded images
+  ├─ doc.extract_image()   — image bytes by xref
+  ├─ page.get_links()      — hyperlinks
+  ├─ page.get_pixmap()     — render page to bitmap
+  └─ fitz.Pixmap           — bitmap operations
 
 paddleocr.PaddleOCR
-  └─ .predict(np.ndarray)  — OCR изображения
+  └─ .predict(np.ndarray)  — OCR image
 
 PIL.Image (pillow)
-  └─ Image.open()          — декодирование встроенных изображений
+  └─ Image.open()          — decode embedded images
 
 numpy
-  └─ np.frombuffer()       — конвертация pixmap байтов в массив
+  └─ np.frombuffer()       — convert pixmap bytes to array
 ```

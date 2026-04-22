@@ -1,31 +1,31 @@
-# Установка
+# Installation
 
-## Требования
+## Requirements
 
-| Компонент | Минимум | Рекомендуется |
+| Component | Minimum | Recommended |
 |---|---|---|
 | Python | 3.10 | 3.12 |
 | RAM | 4 GB | 8 GB |
-| Диск | 2 GB (модели OCR) | 5 GB |
-| ОС | Windows 10 x64 | Windows 11 x64 |
+| Disk | 2 GB (OCR models) | 5 GB |
+| OS | Windows 10 x64 | Windows 11 x64 |
 | GPU | — | NVIDIA (CUDA 11.8+) |
 
 ---
 
-## Шаг 1 — Python
+## Step 1 — Python
 
-Проверь версию:
+Check your version:
 
 ```bash
 python --version
 # Python 3.12.x
 ```
 
-Если Python не установлен — скачай с [python.org](https://python.org). Ставь **Add to PATH** при установке.
+If Python is not installed, download it from [python.org](https://python.org). Make sure to check **Add to PATH** during installation.
 
 ---
 
-## Шаг 2 — Виртуальное окружение
+## Step 2 — Virtual Environment
 
 ```bash
 cd C:\Users\sagyn\Development\pdf-explainer
@@ -34,15 +34,15 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
-После активации в начале строки появится `(.venv)`.
+After activation, you should see `(.venv)` at the start of your terminal line.
 
 ---
 
-## Шаг 3 — PaddlePaddle
+## Step 3 — PaddlePaddle
 
-PaddlePaddle нужно ставить **до** остальных пакетов и **через отдельный индекс**:
+PaddlePaddle must be installed **before** other packages and **from a custom index**:
 
-### CPU (любая машина)
+### CPU (Any Machine)
 
 ```bash
 pip install "paddlepaddle==3.2.0" -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
@@ -60,7 +60,7 @@ pip install "paddlepaddle-gpu==3.2.0" -i https://www.paddlepaddle.org.cn/package
 pip install "paddlepaddle-gpu==3.2.0" -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
 ```
 
-Проверь:
+Verify installation:
 
 ```bash
 python -c "import paddle; paddle.utils.run_check()"
@@ -69,7 +69,7 @@ python -c "import paddle; paddle.utils.run_check()"
 
 ---
 
-## Шаг 4 — Остальные зависимости
+## Step 4 — Other Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -77,61 +77,42 @@ pip install -r requirements.txt
 
 ---
 
-## Шаг 5 — Первый запуск OCR (загрузка моделей)
+## Step 5 — First OCR Run (Model Download)
 
-При первом запуске PaddleOCR автоматически скачает модели (~300 MB):
+On first run, PaddleOCR will automatically download models (~300 MB):
 
 ```bash
-python -c "from paddleocr import PaddleOCR; PaddleOCR(lang='ru')"
+python -c "from paddleocr import PaddleOCR; PaddleOCR(lang='en')"
 ```
 
-Модели кешируются в `~/.paddleocr/` и при следующих запусках не скачиваются.
+Models are cached in `~/.paddleocr/` and will not be re-downloaded on subsequent runs.
 
 ---
 
-## Шаг 6 — `.env` файл (только для explain_pdf.py)
-
-Скопируй пример и заполни:
-
-```bash
-copy .env.example .env
-```
-
-Открой `.env` и укажи:
-
-```
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
-```
-
-`batch_extract.py` не требует `.env` и API-ключей.
-
----
-
-## Проверка установки
+## Step 6 — Verification
 
 ```bash
 python batch_extract.py --help
 ```
 
-Должно вывести список всех параметров без ошибок.
+Should display all parameters without errors.
 
 ---
 
-## Возможные проблемы
+## Common Issues
 
 ### `ModuleNotFoundError: No module named 'paddle'`
 
-PaddlePaddle не установлен или установлен в другое окружение. Убедись что `.venv` активирован и повтори шаг 3.
+PaddlePaddle is not installed or installed in a different environment. Make sure `.venv` is activated and repeat Step 3.
 
-### OCR медленный
+### OCR is Slow
 
-Без GPU PaddleOCR работает на CPU. Это нормально. Для 300-страничной книги: ~5-15 минут на CPU, ~1-2 минуты на GPU.
+Without GPU, PaddleOCR runs on CPU. This is normal. For a 300-page book: ~5-15 minutes on CPU, ~1-2 minutes on GPU.
 
 ### `DLL load failed` (Windows)
 
-Установи [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+Install [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
-### Низкое качество OCR для русских книг
+### Low OCR Quality for Non-English Documents
 
-Используй `--lang ru` или `--lang cyrillic`. Для смешанных (ru + en) текстов — `--lang ru` достаточно.
+Use `--lang ru` (Russian), `--lang zh` (Chinese), or `--lang cyrillic` for Cyrillic scripts. For mixed language documents (e.g., Russian + English), `--lang ru` is sufficient.
