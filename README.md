@@ -3,7 +3,7 @@
 Батч-обработка сотен PDF-файлов → готовый датасет `train.jsonl` для файн-тюнинга LLM.  
 **Production-ready**: нулевая потеря данных, атомарные операции, полное логирование, resume + blacklist.
 
-## ⚡ 30 секунд
+## 30 секунд
 
 ```bash
 # Установка
@@ -21,26 +21,26 @@ ls extracted/
 
 ## Возможности
 
-✅ **Multi-column layouts** — корректная склейка столбцов  
-✅ **Header/footer removal** — автоматическое удаление повторяющихся  
-✅ **Hyperlinks preserved** — сохранение ссылок  
-✅ **Footnotes** — переприсоединение сносок к тексту  
-✅ **Cross-page merging** — соединение рваных абзацев  
-✅ **Tables** → markdown  
-✅ **Image OCR** — текст из встроенных картинок  
-✅ **Full-page OCR** — поддержка отсканированных PDF  
+- **Multi-column layouts** — корректная склейка столбцов  
+- **Header/footer removal** — автоматическое удаление повторяющихся  
+- **Hyperlinks preserved** — сохранение ссылок  
+- **Footnotes** — переприсоединение сносок к тексту  
+- **Cross-page merging** — соединение рваных абзацев  
+- **Tables** → markdown  
+- **Image OCR** — текст из встроенных картинок  
+- **Full-page OCR** — поддержка отсканированных PDF  
 
 ### Production Features
 
-✅ **Input validation** — все ошибки до обработки  
-✅ **Atomic writes** — нет потери данных при краше  
-✅ **OCR timeout** — не зависает на плохих картинках  
-✅ **Integrity checks** — проверка целостности  
-✅ **Resume + blacklist** — продолжение с пропуском повреждённых  
-✅ **Quality Control** — health report + фильтрация низкокачественных чанков  
-✅ **Config files** — YAML/JSON для повторов  
-✅ **Full logging** — лог с временными метками  
-✅ **Pinned versions** — воспроизводимость  
+- **Input validation** — все ошибки до обработки  
+- **Atomic writes** — нет потери данных при краше  
+- **OCR timeout** — не зависает на плохих картинках  
+- **Integrity checks** — проверка целостности  
+- **Resume + blacklist** — продолжение с пропуском повреждённых  
+- **Quality Control** — health report + фильтрация низкокачественных чанков  
+- **Config files** — YAML/JSON для повторов  
+- **Full logging** — лог с временными метками  
+- **Pinned versions** — воспроизводимость  
 
 ---
 
@@ -126,7 +126,7 @@ extracted/
 
 ---
 
-## Параметры (по умолчанию ✓)
+## Параметры (по умолчанию)
 
 | Параметр | Умолч | Что означает |
 |---|---|---|

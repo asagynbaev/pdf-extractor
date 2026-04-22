@@ -116,10 +116,10 @@ python batch_extract.py --config extract.yaml
 ### Валидация входа
 
 ```
-❌ PDF directory not found: C:/NonExistent
-❌ chunk_size must be > 0, got -1
-❌ Output directory not writable: /root/protected
-❌ Less than 1 GB free disk space (0.50 GB)
+ERROR: PDF directory not found: C:/NonExistent
+ERROR: chunk_size must be > 0, got -1
+ERROR: Output directory not writable: /root/protected
+ERROR: Less than 1 GB free disk space (0.50 GB)
 ```
 
 Все ошибки выводятся ПЕРЕД началом обработки.
@@ -218,7 +218,7 @@ Report       : extracted/extraction_report.json
 
 | Метрика | Норма | Проблема |
 |---|---|---|
-| `errors=0` | ✅ | ❌ если > 0 |
+| `errors=0` | Хорошо | Плохо если > 0 |
 | `warnings` | 0–5 на PDF | много warnings → проверь лог |
 | `low_q` | 0–2 на PDF | > 5% страниц → пересчитай с `--dpi 350` |
 | `chars` | сотни тысяч | < 10K → скорее всего пустой или плохой PDF |
